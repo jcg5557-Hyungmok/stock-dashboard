@@ -1,0 +1,30 @@
+# 운영체제 임시 파일 및 시스템 파일
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# 에디터 및 IDE 설정
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 빌드 및 스크래치 스크립트, 임시 산출물
+*.ps1
+scratch/
+tmp/
+temp/
+
+# 바이너리 PDF (GitHub Pages는 HTML/CSS/JS 웹페이지 호스팅용이므로 제외)
+*.pdf
+
+# 환경 변수, 보안 키 및 개인 비밀 파일 방지
+.env
+.env.*
+*.key
+*.pem
+*.token
+*.secret
+credentials*

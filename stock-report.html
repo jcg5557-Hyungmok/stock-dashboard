@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA (NVDA) Stock Report & Dashboard — Apple Light Style</title>
+  <!-- Chart.js Engine -->
+  <script src="chart.min.js"></script>
+  <style>
+    /* =========================================================
+       Apple Light Design System (애플 라이트 모드)
+       - Canvas: Clean Airy Grey-White (#f5f5f7)
+       - Cards: Pure Crisp White (#ffffff) with subtle border & soft diffused shadow
+       - SF Pro Typography: Rich Charcoal (#1d1d1f) & Slate Grey (#86868b)
+       - Apple Semantic Colors:
+         Blue (#0071e3), Green (#34c759), Purple (#af52de), Orange (#ff9500), Red (#ff3b30)
+       - Generous breathing room, smooth rounded corners (20px~24px)
+       ========================================================= */
+    :root {
+      --bg-canvas: #f5f5f7;
+      --card-bg: #ffffff;
+      --card-bg-subtle: #fafafc;
+      --card-border: rgba(0, 0, 0, 0.08);
+      --card-border-subtle: rgba(0, 0, 0, 0.05);
+      --shadow-apple: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+      --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #86868b;
+
+      --apple-blue: #0071e3;
+      --apple-blue-soft: rgba(0, 113, 227, 0.08);
+      --apple-green: #34c759;
+      --apple-green-soft: rgba(52, 199, 89, 0.1);
+      --apple-purple: #af52de;
+      --apple-purple-soft: rgba(175, 82, 222, 0.08);
+      --apple-orange: #ff9500;
+      --apple-orange-soft: rgba(255, 149, 0, 0.1);
+      --apple-red: #ff3b30;
+      --apple-red-soft: rgba(255, 59, 48, 0.08);
+
+      --nvidia-green: #588e00;
+      --nvidia-green-soft: rgba(88, 142, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", sans-serif;
+      background-color: var(--bg-canvas);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 10% 30%, rgba(52, 199, 89, 0.03) 0%, transparent 40%);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: var(--text-primary);
+      line-height: 1.5;
+      letter-spacing: -0.018em;
+      padding: 40px 20px 80px 20px;
+    }
+
+    .container {
+      max-width: 1060px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Top Navigation bar between Dashboards & Print Action */
+    .print-btn-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: -16px;
+    }
+
+    .nav-switcher {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 980px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn.active {
+      background: #1d1d1f;
+      color: #ffffff;
+    }
+
+    .nav-btn.inactive {
+      background: #ffffff;
+      color: var(--text-secondary);
+      border: 1px solid var(--card-border);
+    }
+
+    .nav-btn.inactive:hover {
+      background: #f0f0f2;
+      color: var(--text-primary);
+    }
+
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0071e3;
+      color: #ffffff;
+      border: none;
+      padding: 7px 18px;
+      border-radius: 980px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .print-btn:hover {
+      background: #0077ed;
+      transform: translateY(-1px);
+    }
+
+    /* Apple Clean White Card */
+    .apple-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px 36px;
+      box-shadow: var(--shadow-apple);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 12px 48px 12px;
+      }
+      .apple-card {
+        padding: 22px 18px;
+        border-radius: 20px;
+      }
+      .container {
+        gap: 20px;
+      }
+    }
+
+    /* Apple Top Eyebrow Header */
+    .hero-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--apple-blue);
+      margin-bottom: 8px;
+    }
+
+    .hero-title-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .hero-title-group h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ticker-pill {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 4px 14px;
+      border-radius: 980px;
+      background: var(--nvidia-green-soft);
+      border: 1px solid rgba(88, 142, 0, 0.25);
+      color: var(--nvidia-green);
+      vertical-align: middle;
+    }
+
+    .meta-pills-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-minimal {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: #f0f0f2;
+      padding: 5px 14px;
+      border-radius: 980px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    /* Apple Light Disclaimer Banner */
+    .disclaimer-card {
+      background: #fff9f0;
+      border: 1px solid rgba(255, 149, 0, 0.25);
+      border-radius: 20px;
+      padding: 18px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.86rem;
+      color: #7a4b00;
+      box-shadow: 0 4px 16px rgba(255, 149, 0, 0.05);
+    }
+
+    .disclaimer-badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 980px;
+      letter-spacing: -0.01em;
+      vertical-align: middle;
+    }
+
+    .badge-fact {
+      background: var(--apple-blue-soft);
+      color: var(--apple-blue);
+      border: 1px solid rgba(0, 113, 227, 0.25);
+    }
+
+    .badge-ai {
+      background: var(--apple-purple-soft);
+      color: var(--apple-purple);
+      border: 1px solid rgba(175, 82, 222, 0.25);
+    }
+
+    .badge-check {
+      background: var(--apple-orange-soft);
+      color: #b25000;
+      border: 1px solid rgba(255, 149, 0, 0.3);
+    }
+
+    .badge-read {
+      background: var(--apple-green-soft);
+      color: #1a7f37;
+      border: 1px solid rgba(52, 199, 89, 0.3);
+    }
+
+    .badge-blocked {
+      background: var(--apple-red-soft);
+      color: var(--apple-red);
+      border: 1px solid rgba(255, 59, 48, 0.25);
+    }
+
+    /* Metric Big Numbers */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .metric-cell {
+      background: var(--card-bg-subtle);
+      border: 1px solid var(--card-border-subtle);
+      border-radius: 18px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .metric-cell:hover {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .metric-header {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-big-num {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--text-primary);
+      margin: 10px 0 6px 0;
+    }
+
+    .metric-footer {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .metric-footer.up {
+      color: #1a7f37;
+      font-weight: 600;
+    }
+
+    /* Section Typography */
+    .section-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .section-headline {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    /* Keynote Summary Callout */
+    .keynote-callout {
+      background: linear-gradient(135deg, rgba(0, 113, 227, 0.05), rgba(52, 199, 89, 0.05));
+      border: 1px solid rgba(0, 113, 227, 0.18);
+      border-radius: 18px;
+      padding: 22px 26px;
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: #2c2c2e;
+      margin-bottom: 22px;
+    }
+
+    .keynote-callout strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Side-by-Side Comparison Columns */
+    .side-by-side-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .side-by-side-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-title-group h1 {
+        font-size: 1.75rem;
+      }
+      .metric-big-num {
+        font-size: 1.85rem;
+      }
+    }
+
+    .column-box {
+      border-radius: 18px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .col-fact-apple {
+      background: rgba(0, 113, 227, 0.03);
+      border: 1px solid rgba(0, 113, 227, 0.16);
+    }
+
+    .col-ai-apple {
+      background: rgba(175, 82, 222, 0.03);
+      border: 1px solid rgba(175, 82, 222, 0.16);
+    }
+
+    .column-header {
+      font-size: 0.98rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .col-fact-apple .column-header {
+      color: var(--apple-blue);
+    }
+
+    .col-ai-apple .column-header {
+      color: var(--apple-purple);
+    }
+
+    .apple-item {
+      background: #ffffff;
+      border: 1px solid var(--card-border-subtle);
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 0.89rem;
+      line-height: 1.6;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .apple-item-title {
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .apple-item-desc {
+      color: #48484a;
+    }
+
+    .vocab-pill {
+      background: #e5e5ea;
+      color: #1d1d1f;
+      padding: 1px 8px;
+      border-radius: 980px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    /* Links with Apple Accent */
+    .apple-link {
+      color: var(--apple-blue);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .apple-link:hover {
+      text-decoration: underline;
+      opacity: 0.85;
+    }
+
+    /* Chart Container */
+    .chart-wrapper {
+      position: relative;
+      height: 360px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    /* News Cards */
+    .news-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .news-row-card {
+      background: var(--card-bg-subtle);
+      border: 1px solid var(--card-border-subtle);
+      border-radius: 18px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .news-row-card:hover {
+      border-color: rgba(0, 0, 0, 0.12);
+      background: #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .news-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .news-heading {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.015em;
+    }
+
+    .news-meta-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Checklist Grid */
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
+      gap: 14px;
+    }
+
+    .check-item-card {
+      background: var(--card-bg-subtle);
+      border: 1px solid var(--card-border-subtle);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+
+    .check-item-card h4 {
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .check-item-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* Minimalist Apple Footer */
+    footer {
+      text-align: center;
+      padding-top: 28px;
+      font-size: 0.82rem;
+      color: var(--text-tertiary);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    footer code {
+      font-family: ui-monospace, Menlo, Monaco, monospace;
+      font-size: 0.78rem;
+      color: #3a3a3c;
+      background: #e5e5ea;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    /* =========================================================
+       Print / PDF Export Optimization (A4 Page Break Rules)
+       ========================================================= */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        background-image: none !important;
+        padding: 0 !important;
+        color: #000000 !important;
+        font-size: 10.5pt !important;
+      }
+      .no-print, .nav-switcher, .print-btn-bar {
+        display: none !important;
+      }
+      .container {
+        max-width: 100% !important;
+        gap: 14px !important;
+        padding: 0 !important;
+      }
+      .apple-card {
+        box-shadow: none !important;
+        border: 1px solid #d2d2d7 !important;
+        border-radius: 12px !important;
+        padding: 16px 20px !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 12px !important;
+        background: #ffffff !important;
+      }
+      .column-box, .apple-item, .news-row-card, .check-item-card {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        box-shadow: none !important;
+      }
+      .chart-wrapper {
+        height: 270px !important;
+        page-break-inside: avoid !important;
+      }
+      .apple-link {
+        text-decoration: none !important;
+        color: #0071e3 !important;
+      }
+      footer {
+        border-top: 1px solid #d2d2d7 !important;
+        padding-top: 12px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- 상단 도구 모음: 탭 내비게이션 및 인쇄 / PDF 저장 버튼 -->
+    <div class="print-btn-bar">
+      <div class="nav-switcher">
+        <a href="index.html" class="nav-btn active">NVIDIA 대시보드</a>
+        <a href="tesla.html" class="nav-btn inactive">Tesla 대시보드</a>
+      </div>
+      <div>
+        <button onclick="window.print()" class="print-btn">
+          🖨️ 인쇄 / PDF 저장
+        </button>
+      </div>
+    </div>
+
+    <!-- 고지 배너: AI 초안, 실시간 아님, 인과관계 단정 배제 -->
+    <div class="disclaimer-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+        <span style="font-weight:700; color:#b25000;">Notice &amp; Disclaimer</span>
+        <span style="font-size:0.75rem; color:#8e6000;">Static Archived Data Only</span>
+      </div>
+      <div>
+        본 대시보드는 <strong>AI 초안</strong>이며, <strong>실시간 시세가 아닙니다</strong>. 수집·저장된 과거 일별 종가 자료(<code>nvda_1month_data.json</code>)와 공개 뉴스를 바탕으로 구성되었습니다.
+      </div>
+      <div style="font-size:0.82rem; color:#8e6000;">
+        ⚖️ <strong>인과관계 단정 배제:</strong> 주가 변동은 경제 상황, 금리, 수급 등 복합적 요인의 결과이며 특정 뉴스 하나가 주가 등락의 유일한 원인이라고 단정할 수 없습니다.
+      </div>
+      <div class="disclaimer-badge-row">
+        <span class="badge badge-fact">사실: 공시 수치 및 종가</span>
+        <span class="badge badge-ai">해석: 시장 배경 및 분석</span>
+        <span class="badge badge-check">확인 필요: 본문 미확인 및 예정 일정</span>
+      </div>
+    </div>
+
+    <!-- 헤더 카드: 엔비디아 개요 및 4대 지표 -->
+    <section class="apple-card">
+      <div class="hero-eyebrow">Market Overview · 1 Month Trajectory</div>
+      
+      <div class="hero-title-group">
+        <div>
+          <h1>
+            NVIDIA <span class="ticker-pill">NVDA</span>
+          </h1>
+          <div style="font-size:0.95rem; color:var(--text-secondary); margin-top:4px;">
+            NVIDIA Corporation · 엔비디아
+          </div>
+        </div>
+        <div class="meta-pills-row">
+          <span class="pill-minimal">NASDAQ</span>
+          <span class="pill-minimal">USD ($)</span>
+          <span class="pill-minimal">자료 기준일: 2024-11-14</span>
+          <span class="pill-minimal">저장 파일: nvda_1month_data.json</span>
+        </div>
+      </div>
+
+      <!-- 4대 메트릭 카드 -->
+      <div class="metrics-grid">
+        <div class="metric-cell">
+          <div class="metric-header">
+            <span class="badge badge-fact">사실</span> 최근 종가 (2024-11-14)
+          </div>
+          <div class="metric-big-num">$146.37</div>
+          <div class="metric-footer up">
+            ▲ 1개월 전 대비 +$8.67 (+6.30%)
+            <br><a href="https://www.statmuse.com/money/ask/nvda-stock-price-november-14-2024" target="_blank" rel="noopener noreferrer" class="apple-link">StatMuse 출처 ↗</a>
+          </div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-header">
+            <span class="badge badge-fact">사실</span> 1개월 최저 종가 (2024-10-15)
+          </div>
+          <div class="metric-big-num">$131.25</div>
+          <div class="metric-footer">
+            10월 중순 조정 저점
+            <br><a href="https://www.statmuse.com/money/ask/nvda-stock-price-october-15-2024" target="_blank" rel="noopener noreferrer" class="apple-link">StatMuse 출처 ↗</a>
+          </div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-header">
+            <span class="badge badge-fact">사실</span> 1개월 최고 종가 (2024-11-07)
+          </div>
+          <div class="metric-big-num">$148.48</div>
+          <div class="metric-footer up">
+            11월 초 기록한 최고점
+            <br><a href="https://www.statmuse.com/money/ask/nvda-stock-price-november-7-2024" target="_blank" rel="noopener noreferrer" class="apple-link">StatMuse 출처 ↗</a>
+          </div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-header">
+            <span class="badge badge-ai">해석</span> 1개월 가격 변동폭
+          </div>
+          <div class="metric-big-num">$17.23</div>
+          <div class="metric-footer">
+            최저-최고 변동률: 약 13.1%
+            <br><span style="font-size:0.75rem; color:var(--text-tertiary);">수치 계산값 기반</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. 핵심 요약: 사실과 해석 나란히 보기 -->
+    <section class="apple-card">
+      <div class="section-eyebrow">Executive Summary</div>
+      <div class="section-headline">
+        <span>1. 핵심 요약: 사실과 해석 나란히 보기</span>
+        <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-tertiary);">Side-by-Side Analysis</span>
+      </div>
+
+      <!-- 애플 키노트 감성의 라이트 요약 박스 -->
+      <div class="keynote-callout">
+        💡 <strong>핵심 요약 한눈에 보기:</strong> 엔비디아 주가는 최근 1개월 동안 <strong>$137.70에서 $146.37로 약 6.3% 상승</strong>했습니다. 10월 말 잠시 숨고르기 후 11월 초 최고점($148.48)을 기록했습니다. 다만 이 기간에는 미국 대선, 다우 지수 편입, 차세대 칩 출시 기대감이 함께 맞물려 있었으므로 <strong>어느 특정 뉴스 하나 때문에 주가가 올랐다고 단정할 수 없습니다.</strong>
+      </div>
+
+      <!-- 좌우 2단 대칭 컬럼 -->
+      <div class="side-by-side-grid">
+        
+        <!-- 왼쪽: 사실 (Fact) -->
+        <div class="column-box col-fact-apple">
+          <div class="column-header">
+            <span class="badge badge-fact">사실 (Fact)</span> 공시 및 통계로 검증된 내용
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">① 1개월 주가 흐름 (+6.30%)</div>
+            <div class="apple-item-desc">
+              2024년 10월 14일 $137.70으로 시작하여 2024년 11월 14일 $146.37로 마감했습니다. 10월 31일 $132.40으로 내렸다가 11월 7일 $148.48까지 상승했습니다.
+              <br><a href="https://www.statmuse.com" target="_blank" rel="noopener noreferrer" class="apple-link">StatMuse 일별 데이터 ↗</a>
+            </div>
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">② 사업 및 본사 위치</div>
+            <div class="apple-item-desc">
+              1993년 젠슨 황 등이 창업했으며 본사는 미국 캘리포니아주 산타클라라에 있습니다. AI 두뇌 역할을 하는 반도체(GPU)와 게임용 부품을 제조합니다.
+              <br><a href="https://nvidianews.nvidia.com" target="_blank" rel="noopener noreferrer" class="apple-link">공식 뉴스룸 ↗</a>
+            </div>
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">③ 다우 지수 편입 및 3분기 매출</div>
+            <div class="apple-item-desc">
+              2024년 11월 1일 다우존스 30개 우량 종목에 인텔 대신 편입 발표되었습니다. 2024년 10월 27일까지의 3분기 매출은 351억 달러(약 48조 원)를 달성했습니다.
+              <br><a href="https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2025" target="_blank" rel="noopener noreferrer" class="apple-link">공식 실적 보도자료 ↗</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 오른쪽: 해석 (Interpretation) -->
+        <div class="column-box col-ai-apple">
+          <div class="column-header">
+            <span class="badge badge-ai">해석 (Interpretation)</span> 시장 배경 및 시각 분석
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">① 주가 흐름의 복합적 배경</div>
+            <div class="apple-item-desc">
+              10월 말에는 빅테크 기업들의 실적 발표를 앞두고 관망세가 짙었습니다. 11월 초에는 대선 직후 기술주 투자 심리 개선과 지수 편입 이슈가 겹쳤으므로 단일 원인으로 해석하기 어렵습니다.
+            </div>
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">② 독점적 경쟁 우위 (경제적 해자)</div>
+            <div class="apple-item-desc">
+              <span class="vocab-pill">쉬운 풀이</span> 반도체 기계만 좋은 것이 아니라, 개발자들이 AI를 만들 때 쓰는 전용 소프트웨어 프로그램(<span class="vocab-pill">CUDA·쿠다</span>)을 독점 제공하여 다른 회사 제품으로 바꾸기 어렵게 만든 점이 강력한 강점입니다.
+            </div>
+          </div>
+
+          <div class="apple-item">
+            <div class="apple-item-title">③ 148달러 고점 이후 횡보하는 이유</div>
+            <div class="apple-item-desc">
+              최고가를 기록한 뒤 145~147달러 선에서 등락한 것은, 11월 20일로 예정된 공식 실적 발표를 앞두고 미리 수익을 확정 지으려는 매물이 나왔기 때문으로 분석됩니다.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. 종가 차트 (라이트 모드) -->
+    <section class="apple-card">
+      <div class="section-eyebrow">Interactive Chart</div>
+      <div class="section-headline">
+        <span>2. 최근 1개월 일일 종가(Closing Price) 추이</span>
+        <span class="badge badge-fact">24 Trading Days</span>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-10px;">
+        2024년 10월 14일 ~ 2024년 11월 14일 · 미국 달러(USD $) · 터치/호버 시 일별 상세 종가가 팝업됩니다.
+      </p>
+
+      <div class="chart-wrapper">
+        <canvas id="nvdaChart"></canvas>
+      </div>
+    </section>
+
+    <!-- 3. 초보자를 위한 회사 소개 및 용어 풀이 -->
+    <section class="apple-card">
+      <div class="section-eyebrow">Fundamentals &amp; Glossary</div>
+      <div class="section-headline">
+        <span>3. 초보자를 위한 회사 소개 &amp; 핵심 용어 풀이</span>
+        <span class="badge badge-fact">Verified Fundamentals</span>
+      </div>
+
+      <div class="side-by-side-grid">
+        <div class="apple-item" style="background:var(--card-bg-subtle);">
+          <div class="apple-item-title" style="color:var(--apple-blue); font-size:1rem;">
+            💡 엔비디아는 무엇을 하는 회사인가요?
+          </div>
+          <div class="apple-item-desc" style="color:#2c2c2e; margin-top:8px;">
+            컴퓨터 게임 화면을 부드럽게 표현하던 그래픽 카드 제조사에서 출발하여, 현재는 전 세계 인공지능(AI) 서비스가 수많은 연산을 동시에 학습하고 계산할 수 있도록 지원하는 <strong>'AI의 핵심 두뇌 반도체'</strong>를 설계하는 세계 선두 기업입니다.
+          </div>
+        </div>
+
+        <div class="apple-item" style="background:var(--card-bg-subtle);">
+          <div class="apple-item-title" style="color:var(--apple-blue); font-size:1rem;">
+            📖 초보자를 위한 3대 핵심 용어 쉬운 풀이
+          </div>
+          <div class="apple-item-desc" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            <div><strong>• GPU(그래픽 처리장치):</strong> 수만 가지의 단순 계산을 동시에 처리하여 대규모 AI 학습을 가능케 하는 고성능 반도체입니다.</div>
+            <div><strong>• 블랙웰(Blackwell):</strong> 엔비디아가 새롭게 설계한 차세대 초강력 AI 칩 아키텍처의 제품명입니다.</div>
+            <div><strong>• CapEx(설비투자):</strong> 구글, 마이크로소프트 등 거대 IT 기업들이 데이터센터 구축에 투입하는 대규모 자본 지출입니다.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 최근 관련 뉴스 5선 -->
+    <section class="apple-card">
+      <div class="section-eyebrow">News &amp; Media Coverage</div>
+      <div class="section-headline">
+        <span>4. 최근 관련 뉴스 5선</span>
+        <span style="font-size:0.8rem; font-weight:500; color:var(--text-tertiary);">본문 접근 상태 투명 공개</span>
+      </div>
+
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:-10px; margin-bottom:6px;">
+        💡 <strong>투명성 안내:</strong> 본문을 직접 읽고 확인한 기사는 <span class="badge badge-read">본문 확인 완료</span>로 표시하고, 언론사 보안(봇 방화벽)으로 본문 전문을 열람하지 못한 기사는 지어내지 않고 <span class="badge badge-blocked">접근 제한 (제목·헤드라인 확인)</span>으로 사실 그대로 명시했습니다.
+      </p>
+
+      <div class="news-stack">
+
+        <!-- 뉴스 1: CNBC 다우지수 편입 -->
+        <div class="news-row-card">
+          <div class="news-row-header">
+            <div class="news-heading">1. 엔비디아, 인텔 대신 다우존스 산업평균지수(DJIA) 공식 편입</div>
+            <div>
+              <span class="badge badge-read">본문 확인 완료 (HTTP 200)</span>
+              <span class="badge badge-fact">사실 보도</span>
+            </div>
+          </div>
+          <div class="news-meta-text">
+            <span>📅 2024-11-01</span> · <span>CNBC (기자: Jordan Novet)</span>
+          </div>
+          <div class="side-by-side-grid" style="margin-top:4px;">
+            <div class="apple-item">
+              <span class="badge badge-fact" style="margin-bottom:4px;">기사 사실 (Fact)</span><br>
+              미국 30대 대표 우량 기업을 모은 다우 지수에서 25년간 자리를 지킨 인텔이 제외되고 엔비디아가 새로 편입되었습니다 (2024년 11월 8일 발효).
+            </div>
+            <div class="apple-item">
+              <span class="badge badge-ai" style="margin-bottom:4px;">시장 해석 (Interpretation)</span><br>
+              반도체 산업 주도권이 전통 PC용 CPU(인텔)에서 인공지능용 GPU(엔비디아)로 이동했음을 시장 지수가 공식 인정한 것으로 평가됩니다.
+            </div>
+          </div>
+          <div>
+            🔗 <a href="https://www.cnbc.com/2024/11/01/nvidia-to-join-dow-jones-industrial-average-replacing-intel.html" target="_blank" rel="noopener noreferrer" class="apple-link">https://www.cnbc.com/2024/11/01/nvidia-to-join-dow-jones-industrial-average-replacing-intel.html</a>
+            <span style="color:#1a7f37; font-size:0.75rem; margin-left:6px;">[✓ 링크 정상 열림 확인]</span>
+          </div>
+        </div>
+
+        <!-- 뉴스 2: CNBC 시가총액 1위 탈환 -->
+        <div class="news-row-card">
+          <div class="news-row-header">
+            <div class="news-heading">2. 엔비디아, 장중 애플 제치고 세계 시가총액 1위 등극</div>
+            <div>
+              <span class="badge badge-read">본문 확인 완료 (HTTP 200)</span>
+              <span class="badge badge-fact">사실 보도</span>
+            </div>
+          </div>
+          <div class="news-meta-text">
+            <span>📅 2024-11-05</span> · <span>CNBC (기자: Kif Leswing)</span>
+          </div>
+          <div class="side-by-side-grid" style="margin-top:4px;">
+            <div class="apple-item">
+              <span class="badge badge-fact" style="margin-bottom:4px;">기사 사실 (Fact)</span><br>
+              엔비디아 시가총액이 약 3조 4,300억 달러에 도달하여 애플(약 3조 4,000억 달러)을 제치고 전 세계에서 가장 몸값이 비싼 기업 1위에 올랐습니다.
+            </div>
+            <div class="apple-item">
+              <span class="badge badge-ai" style="margin-bottom:4px;">시장 해석 (Interpretation)</span><br>
+              스마트폰 소비재 수요보다 생성형 AI 인프라를 구축하려는 빅테크 기업들의 설비투자 의지가 훨씬 강력함을 보여준 결과로 풀이됩니다.
+            </div>
+          </div>
+          <div>
+            🔗 <a href="https://www.cnbc.com/2024/11/05/nvidia-passes-apple-as-worlds-most-valuable-company-.html" target="_blank" rel="noopener noreferrer" class="apple-link">https://www.cnbc.com/2024/11/05/nvidia-passes-apple-as-worlds-most-valuable-company-.html</a>
+            <span style="color:#1a7f37; font-size:0.75rem; margin-left:6px;">[✓ 링크 정상 열림 확인]</span>
+          </div>
+        </div>
+
+        <!-- 뉴스 3: NVIDIA 공식 실적 보도자료 -->
+        <div class="news-row-card">
+          <div class="news-row-header">
+            <div class="news-heading">3. [공식 발표] 2025 회계연도 3분기 분기 매출 351억 달러 (전년비 +94%)</div>
+            <div>
+              <span class="badge badge-read">본문 확인 완료 (HTTP 200)</span>
+              <span class="badge badge-fact">공식 공시</span>
+            </div>
+          </div>
+          <div class="news-meta-text">
+            <span>📅 발표일: 2024-11-20 (대상 분기: ~2024-10-27)</span> · <span>NVIDIA Newsroom</span>
+          </div>
+          <div class="side-by-side-grid" style="margin-top:4px;">
+            <div class="apple-item">
+              <span class="badge badge-fact" style="margin-bottom:4px;">공시 사실 (Fact)</span><br>
+              분기 총매출 351억 달러 중 데이터센터 부문 매출이 308억 달러로 전년 대비 112% 급증했습니다. 젠슨 황 CEO는 차세대 블랙웰 칩 수요가 막대하다고 공시했습니다.
+            </div>
+            <div class="apple-item">
+              <span class="badge badge-ai" style="margin-bottom:4px;">시장 해석 (Interpretation)</span><br>
+              "AI 투자 거품론" 우려를 실제 수치로 일축시켰으나, 세 자릿수에 달하는 초고속 성장이 지속 가능한지에 대한 시장의 관심이 집중되고 있습니다.
+            </div>
+          </div>
+          <div>
+            🔗 <a href="https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2025" target="_blank" rel="noopener noreferrer" class="apple-link">https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2025</a>
+            <span style="color:#1a7f37; font-size:0.75rem; margin-left:6px;">[✓ 링크 정상 열림 확인]</span>
+          </div>
+        </div>
+
+        <!-- 뉴스 4: 로이터 통신 (접근 제한) -->
+        <div class="news-row-card">
+          <div class="news-row-header">
+            <div class="news-heading">4. 로이터: 엔비디아, 다우 지수에서 인텔 대체 보도</div>
+            <div>
+              <span class="badge badge-blocked">접근 제한 (제목·헤드라인만 확인)</span>
+              <span class="badge badge-check">확인 필요</span>
+            </div>
+          </div>
+          <div class="news-meta-text">
+            <span>📅 2024-11-01</span> · <span>Reuters</span> · <span>상태: 언론사 안티봇 보안 차단(HTTP 401)</span>
+          </div>
+          <div class="apple-item" style="border-color:rgba(255,59,48,0.2); background:#fff5f5;">
+            ⚠️ <strong>[미확인 및 접근 상태 알림]:</strong> 로이터 서버의 봇 차단 및 보안 인증 제어로 본문 전문을 직접 읽어 요약하지 못했습니다. 기사 제목("Nvidia replaces Intel in Dow Jones Industrial Average")과 공개 색인 수준의 사실만 확인되었으며 상세 본문은 지어내지 않고 남겨둡니다.
+          </div>
+          <div>
+            🔗 <a href="https://www.reuters.com/technology/nvidia-replaces-intel-dow-jones-industrial-average-2024-11-01/" target="_blank" rel="noopener noreferrer" class="apple-link">https://www.reuters.com/technology/nvidia-replaces-intel-dow-jones-industrial-average-2024-11-01/</a>
+            <span style="color:#b25000; font-size:0.75rem; margin-left:6px;">[※ 웹 브라우저에서 직접 열기 가능]</span>
+          </div>
+        </div>
+
+        <!-- 뉴스 5: 포브스 (접근 제한) -->
+        <div class="news-row-card">
+          <div class="news-row-header">
+            <div class="news-heading">5. 포브스: 젠슨 황 CEO의 블랙웰 AI 수퍼칩 '미친(Insane) 수요' 언급 보도</div>
+            <div>
+              <span class="badge badge-blocked">접근 제한 (제목·헤드라인만 확인)</span>
+              <span class="badge badge-check">확인 필요</span>
+            </div>
+          </div>
+          <div class="news-meta-text">
+            <span>📅 2024-10-03</span> · <span>Forbes (기자: Antonio Pequeño IV)</span> · <span>상태: Cloudflare 방화벽 차단(HTTP 403)</span>
+          </div>
+          <div class="apple-item" style="border-color:rgba(255,59,48,0.2); background:#fff5f5;">
+            ⚠️ <strong>[미확인 및 접근 상태 알림]:</strong> 포브스 사이트의 방화벽 통제로 자동화 도구의 본문 수집이 차단되었습니다. 공개 색인된 헤드라인("Nvidia Shares Jump After CEO Jensen Huang Notes 'Insane' Demand For Blackwell AI Superchip") 수준만 확인되었으므로 본문 맥락은 원문 링크를 직접 확인해야 합니다.
+          </div>
+          <div>
+            🔗 <a href="https://www.forbes.com/sites/antoniopequeno/2024/10/03/nvidia-shares-jump-after-ceo-jensen-huang-notes-insane-demand-for-blackwell-ai-superchip/" target="_blank" rel="noopener noreferrer" class="apple-link">https://www.forbes.com/sites/antoniopequeno/2024/10/03/nvidia-shares-jump-after-ceo-jensen-huang-notes-insane-demand-for-blackwell-ai-superchip/</a>
+            <span style="color:#b25000; font-size:0.75rem; margin-left:6px;">[※ 웹 브라우저에서 직접 열기 가능]</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 5. 초보자가 더 확인해야 할 4가지 -->
+    <section class="apple-card">
+      <div class="section-eyebrow">Key Watchlist</div>
+      <div class="section-headline">
+        <span>5. 초보자가 앞으로 더 확인해야 할 4가지</span>
+        <span class="badge badge-check">Next Steps</span>
+      </div>
+
+      <div class="checklist-grid">
+        <div class="check-item-card">
+          <h4><span class="badge badge-check">확인 필요</span> 1. 실적 가이던스</h4>
+          <p>전체 매출액 외에도 경영진이 제시하는 다음 분기 전망치(가이던스)가 시장의 눈높이를 충족하는지 확인하세요.</p>
+        </div>
+
+        <div class="check-item-card">
+          <h4><span class="badge badge-check">확인 필요</span> 2. 차세대 칩 납품</h4>
+          <p>새로 개발된 블랙웰(Blackwell) 칩이 발열 이슈 없이 대만 TSMC 공장에서 정상적으로 양산 인도되는지 지켜보세요.</p>
+        </div>
+
+        <div class="check-item-card">
+          <h4><span class="badge badge-check">확인 필요</span> 3. 빅테크 투자(CapEx)</h4>
+          <p>마이크로소프트, 구글, 메타 등이 AI 데이터센터에 투자를 지속하는지와 수익화 속도를 점검하세요.</p>
+        </div>
+
+        <div class="check-item-card">
+          <h4><span class="badge badge-check">확인 필요</span> 4. 무역 및 수출 규제</h4>
+          <p>미국 상무부의 대중국 고성능 반도체 수출 통제 조치 강화 여부와 이에 따른 해외 매출 영향을 살피세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer>
+      <p>Designed with Apple Light minimalist aesthetics · Saved at <code>c:\Users\insuk\Downloads\Antigravity\stock\index.html</code></p>
+      <p style="margin-top:6px; color:#86868b;">데이터 기준일: 2024-11-14 | 주가 출처: StatMuse / 공개 금융 데이터 | 본 화면은 AI 초안이며 실시간 시세가 아닙니다. 개별 뉴스를 주가 변동 원인으로 단정하지 마십시오.</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // 기존 1개월 24거래일 데이터 (100% 동일 유지)
+    const nvdaData = [
+      { "date": "2024-10-14", "close": 137.70 },
+      { "date": "2024-10-15", "close": 131.25 },
+      { "date": "2024-10-16", "close": 135.36 },
+      { "date": "2024-10-17", "close": 136.56 },
+      { "date": "2024-10-18", "close": 137.63 },
+      { "date": "2024-10-21", "close": 143.33 },
+      { "date": "2024-10-22", "close": 143.21 },
+      { "date": "2024-10-23", "close": 139.19 },
+      { "date": "2024-10-24", "close": 140.03 },
+      { "date": "2024-10-25", "close": 141.16 },
+      { "date": "2024-10-28", "close": 140.14 },
+      { "date": "2024-10-29", "close": 140.87 },
+      { "date": "2024-10-30", "close": 138.96 },
+      { "date": "2024-10-31", "close": 132.40 },
+      { "date": "2024-11-01", "close": 135.04 },
+      { "date": "2024-11-04", "close": 135.69 },
+      { "date": "2024-11-05", "close": 139.54 },
+      { "date": "2024-11-06", "close": 145.22 },
+      { "date": "2024-11-07", "close": 148.48 },
+      { "date": "2024-11-08", "close": 147.23 },
+      { "date": "2024-11-11", "close": 144.87 },
+      { "date": "2024-11-12", "close": 147.89 },
+      { "date": "2024-11-13", "close": 145.88 },
+      { "date": "2024-11-14", "close": 146.37 }
+    ];
+
+    const labels = nvdaData.map(d => d.date.slice(5)); // '10-14' 포맷
+    const prices = nvdaData.map(d => d.close);
+
+    const ctx = document.getElementById('nvdaChart').getContext('2d');
+    
+    // Apple Light Theme Gradient (Soft Fresh Green)
+    const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+    gradient.addColorStop(0, 'rgba(52, 199, 89, 0.22)');
+    gradient.addColorStop(1, 'rgba(52, 199, 89, 0.0)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Close ($)',
+          data: prices,
+          borderColor: '#34c759', // Apple Green Line
+          borderWidth: 2.4,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#34c759',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#34c759',
+          pointHoverBorderColor: '#ffffff',
+          pointHoverBorderWidth: 2,
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.28
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#6e6e73',
+            bodyColor: '#1d1d1f',
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 4,
+            cornerRadius: 12,
+            displayColors: false,
+            titleFont: {
+              size: 11,
+              weight: '500'
+            },
+            bodyFont: {
+              size: 14,
+              weight: '700'
+            },
+            callbacks: {
+              title: function(context) {
+                return '2024년 ' + context[0].label.replace('-', '월 ') + '일';
+              },
+              label: function(context) {
+                return '$' + context.raw.toFixed(2) + ' USD';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false,
+              drawBorder: false
+            },
+            ticks: {
+              color: '#86868b',
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 8
+            }
+          },
+          y: {
+            min: 125,
+            max: 155,
+            position: 'right', // Apple Stocks light theme right scale
+            grid: {
+              color: 'rgba(0, 0, 0, 0.04)',
+              drawBorder: false
+            },
+            ticks: {
+              color: '#86868b',
+              font: {
+                size: 11,
+                weight: '500'
+              },
+              callback: function(value) {
+                return '$' + value;
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
